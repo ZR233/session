@@ -34,7 +34,9 @@ type Manager struct {
 }
 
 func NewManager(db adapter.DB) *Manager {
-	m := &Manager{}
+	m := &Manager{
+		db: db,
+	}
 	return m
 }
 func (m Manager) genToken() string {
