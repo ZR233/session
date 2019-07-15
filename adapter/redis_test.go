@@ -5,7 +5,7 @@
 package adapter
 
 import (
-	session2 "github.com/ZR233/session"
+	"github.com/ZR233/session/model"
 	"reflect"
 	"testing"
 	"time"
@@ -86,10 +86,10 @@ func TestRedis_FindByToken(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *session2.Session
+		want    *model.Session
 		wantErr bool
 	}{
-		{"", args{"222222"}, &session2.Session{}, false},
+		{"", args{"222222"}, &model.Session{}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

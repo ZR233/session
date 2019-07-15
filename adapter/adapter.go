@@ -5,7 +5,7 @@
 package adapter
 
 import (
-	session2 "github.com/ZR233/session"
+	"github.com/ZR233/session/model"
 	"time"
 )
 
@@ -14,10 +14,10 @@ type DB interface {
 	CreateTokenMap(token string, channel string, expireTime time.Duration) error
 	//key为token的map 设定超时时间
 	TokenMapTokenExpireAt(token string, expireAt time.Time) error
-	//session 设置userId, userId所有token列表追加token
+	//model 设置userId, userId所有token列表追加token
 	SessionUpdateUserIdAndUserTokenSetAppendToken(userId string, token string, expireAt time.Time) error
 
-	FindByToken(token string) (*session2.Session, error)
+	FindByToken(token string) (*model.Session, error)
 
 	//更新map的jsonField字段
 	UpdateTokenMapSetJsonField(token string, jsonField string) error

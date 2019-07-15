@@ -5,14 +5,14 @@
 package adapter
 
 import (
-	session2 "github.com/ZR233/session"
+	"github.com/ZR233/session/model"
 	"github.com/go-redis/redis"
 	"strconv"
 	"time"
 )
 
 const (
-	DefaultPrefix = "session"
+	DefaultPrefix = "model"
 )
 
 type Redis struct {
@@ -71,7 +71,7 @@ func (r Redis) SessionUpdateUserIdAndUserTokenSetAppendToken(userId string, toke
 	return err
 }
 
-func (r Redis) FindByToken(token string) (*session2.Session, error) {
+func (r Redis) FindByToken(token string) (*model.Session, error) {
 	tokenKey := r.genSessionMapKey(token)
 	data, err := r.db.HGetAll(tokenKey).Result()
 	if err != nil {
@@ -91,7 +91,7 @@ func (r Redis) FindByToken(token string) (*session2.Session, error) {
 		return nil, nil
 	}
 
-	s := &session2.Session{
+	s := &model.Session{
 		Token:    token,
 		UserId:   data["userid"],
 		Channel:  data["channel"],
