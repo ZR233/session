@@ -11,7 +11,6 @@ import (
 	"errors"
 	"github.com/ZR233/session/adapter"
 	"github.com/ZR233/session/serr"
-	"github.com/ZR233/session/session"
 	"github.com/go-redis/redis"
 	"strconv"
 	"sync/atomic"
@@ -53,8 +52,8 @@ func (m Manager) genToken() string {
 	return hex.EncodeToString(ctx.Sum(nil))
 }
 
-func (m Manager) CreateSession(channel string, expireTime time.Duration) (s *session.Session, err error) {
-	s = &session.Session{
+func (m Manager) CreateSession(channel string, expireTime time.Duration) (s *Session, err error) {
+	s = &Session{
 		Token:   m.genToken(),
 		Channel: channel,
 	}
@@ -64,7 +63,7 @@ func (m Manager) CreateSession(channel string, expireTime time.Duration) (s *ses
 
 	return s, nil
 }
-func (m Manager) UpdateUserId(s *session.Session, token string, expireTime time.Duration) (*session.Session, error) {
+func (m Manager) UpdateUserId(s *Session, token string, expireTime time.Duration) (*Session, error) {
 	s.Token = token
 
 	expireAt := time.Now().Add(expireTime)
@@ -74,7 +73,7 @@ func (m Manager) UpdateUserId(s *session.Session, token string, expireTime time.
 	return s, nil
 }
 
-func (m Manager) FindByToken(token string) (s *session.Session, err error) {
+func (m Manager) FindByToken(token string) (s *Session, err error) {
 
 	if len(token) < tokenLen {
 		return nil, serr.NewErr(errors.New("token not found"), serr.TokenNotFind)
@@ -85,7 +84,7 @@ func (m Manager) FindByToken(token string) (s *session.Session, err error) {
 	}
 	return s, nil
 }
-func (m Manager) GetUserAllSessions(userId string) (sessions []*session.Session, err error) {
+func (m Manager) GetUserAllSessions(userId string) (sessions []*Session, err error) {
 	tokens, err := m.db.FindTokenByUserId(userId)
 	if err != nil {
 		return sessions, serr.NewErr(err, serr.RedisErr)
@@ -97,7 +96,7 @@ func (m Manager) GetUserAllSessions(userId string) (sessions []*session.Session,
 	return sessions, nil
 }
 
-func (m Manager) UpdateJsonField(s *session.Session, jsonField interface{}) error {
+func (m Manager) UpdateJsonField(s *Session, jsonField interface{}) error {
 	jsonStr, err := json.Marshal(jsonField)
 	if err != nil {
 		return serr.NewErr(err, serr.JsonErr)
@@ -106,7 +105,7 @@ func (m Manager) UpdateJsonField(s *session.Session, jsonField interface{}) erro
 	return m.db.UpdateTokenMapSetJsonField(s.Token, string(jsonStr))
 }
 
-func (m Manager) Delete(s *session.Session) error {
+func (m Manager) Delete(s *Session) error {
 	return m.db.DeleteByToken(s.Token)
 }
 

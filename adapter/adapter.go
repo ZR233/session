@@ -5,7 +5,7 @@
 package adapter
 
 import (
-	"github.com/ZR233/session/session"
+	session2 "github.com/ZR233/session"
 	"time"
 )
 
@@ -17,7 +17,7 @@ type DB interface {
 	//session 设置userId, userId所有token列表追加token
 	SessionUpdateUserIdAndUserTokenSetAppendToken(userId string, token string, expireAt time.Time) error
 
-	FindByToken(token string) (*session.Session, error)
+	FindByToken(token string) (*session2.Session, error)
 
 	//更新map的jsonField字段
 	UpdateTokenMapSetJsonField(token string, jsonField string) error

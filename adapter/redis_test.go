@@ -5,11 +5,11 @@
 package adapter
 
 import (
+	session2 "github.com/ZR233/session"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/ZR233/session/session"
 	"github.com/go-redis/redis"
 )
 
@@ -86,10 +86,10 @@ func TestRedis_FindByToken(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *session.Session
+		want    *session2.Session
 		wantErr bool
 	}{
-		{"", args{"222222"}, &session.Session{}, false},
+		{"", args{"222222"}, &session2.Session{}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
