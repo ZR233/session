@@ -12,6 +12,7 @@ import (
 	"github.com/ZR233/session/adapter"
 	"github.com/ZR233/session/serr"
 	"github.com/ZR233/session/session"
+	"github.com/go-redis/redis"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -39,6 +40,11 @@ func NewManager(db adapter.DB) *Manager {
 	}
 	return m
 }
+
+func NewRedisAdapter(client *redis.Client, prefix string) adapter.Redis {
+	return adapter.NewRedis(client, prefix)
+}
+
 func (m Manager) genToken() string {
 	tokenIdIter := atomic.AddUint64(m.tokenIdIter, 1)
 	ctx := md5.New()
