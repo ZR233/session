@@ -63,11 +63,11 @@ func (m Manager) CreateSession(channel string, expireTime time.Duration) (s *Ses
 
 	return s, nil
 }
-func (m Manager) UpdateUserId(s *Session, token string, expireTime time.Duration) (*Session, error) {
-	s.Token = token
+func (m Manager) UpdateUserId(s *Session, id string, expireTime time.Duration) (*Session, error) {
+	s.UserId = id
 
 	expireAt := time.Now().Add(expireTime)
-	if err := m.db.SessionUpdateUserIdAndUserTokenSetAppendToken(s.UserId, token, expireAt); err != nil {
+	if err := m.db.SessionUpdateUserIdAndUserTokenSetAppendToken(s.UserId, s.Token, expireAt); err != nil {
 		return nil, err
 	}
 	return s, nil
