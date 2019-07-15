@@ -35,8 +35,11 @@ type Manager struct {
 }
 
 func NewManager(db adapter.DB) *Manager {
+	var iter uint64 = 0
+
 	m := &Manager{
-		db: db,
+		tokenIdIter: &iter,
+		db:          db,
 	}
 	return m
 }
