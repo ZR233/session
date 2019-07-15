@@ -4,9 +4,12 @@
 */
 package session
 
+import "time"
+
 type Session struct {
 	Token      string
 	UserId     string
 	Channel    string
+	ExpireAt   time.Time
 	JsonFields interface{}
 }

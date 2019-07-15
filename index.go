@@ -50,7 +50,7 @@ func (m Manager) CreateSession(channel string, expireTime time.Duration) (s *ses
 		Token:   m.genToken(),
 		Channel: channel,
 	}
-	if err := m.db.CreateTokenMap(s.Token, s.Channel); err != nil {
+	if err := m.db.CreateTokenMap(s.Token, s.Channel, expireTime); err != nil {
 		return nil, err
 	}
 
@@ -59,12 +59,8 @@ func (m Manager) CreateSession(channel string, expireTime time.Duration) (s *ses
 func (m Manager) UpdateUserId(s *session.Session, token string, expireTime time.Duration) (*session.Session, error) {
 	s.Token = token
 
-	if err := m.db.UpdateTokenMapSetUserId(token, s.UserId); err != nil {
-		return nil, err
-	}
 	expireAt := time.Now().Add(expireTime)
-
-	if err := m.db.UserIdTokenListAppendToken(s.UserId, token, expireAt); err != nil {
+	if err := m.db.SessionUpdateUserIdAndUserTokenSetAppendToken(s.UserId, token, expireAt); err != nil {
 		return nil, err
 	}
 	return s, nil
@@ -100,4 +96,20 @@ func (m Manager) UpdateJsonField(s *session.Session, jsonField interface{}) erro
 	}
 
 	return m.db.UpdateTokenMapSetJsonField(s.Token, string(jsonStr))
+}
+
+func (m Manager) Delete(s *session.Session) error {
+	return m.db.DeleteByToken(s.Token)
+}
+
+func (m Manager) DeleteByUser(id string) error {
+	tokens, err := m.db.FindTokenByUserId(id)
+	if err != nil {
+		return err
+	}
+	for _, token := range tokens {
+		_ = m.db.DeleteByToken(token)
+	}
+
+	return nil
 }
