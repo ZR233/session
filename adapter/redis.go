@@ -7,7 +7,6 @@ package adapter
 import (
 	"github.com/ZR233/session/model"
 	"github.com/go-redis/redis"
-	"strconv"
 	"time"
 )
 
@@ -47,26 +46,32 @@ func (r Redis) CreateTokenMap(token string, channel string, expireTime time.Dura
 	key := r.genSessionMapKey(token)
 	values := make(map[string]interface{})
 	values["channel"] = channel
-	values["expireAt"] = time.Now().Add(expireTime).Unix()
-	return r.db.HMSet(key, values).Err()
+	expireAt := time.Now().Add(expireTime)
+	pipe := r.db.TxPipeline()
+	pipe.HMSet(key, values)
+	pipe.ExpireAt(key, expireAt)
+	_, err := pipe.Exec()
+
+	return err
 }
 
 func (r Redis) TokenMapTokenExpireAt(token string, expireAt time.Time) error {
 	tokenKey := r.genSessionMapKey(token)
-	return r.db.HSet(tokenKey, "expireAt", expireAt.Unix()).Err()
+	return r.db.ExpireAt(tokenKey, expireAt).Err()
 }
 
-func (r Redis) SessionUpdateUserIdAndUserTokenSetAppendToken(userId string, token string, expireAt time.Time) error {
-	userKey := r.genUserSessionSetKey(userId)
-	tokenKey := r.genSessionMapKey(token)
+func (r Redis) SessionUpdate(s model.Session) error {
+	userKey := r.genUserSessionSetKey(s.UserId)
+	tokenKey := r.genSessionMapKey(s.Token)
 
 	values := make(map[string]interface{})
-	values["userid"] = userId
-	values["expireAt"] = expireAt.Unix()
+	values["userid"] = s.UserId
 
 	pipe := r.db.TxPipeline()
 	pipe.HMSet(tokenKey, values)
 	pipe.SAdd(userKey, tokenKey)
+	pipe.ExpireAt(tokenKey, s.ExpireAt)
+	pipe.ExpireAt(userKey, s.ExpireAt)
 	_, err := pipe.Exec()
 	return err
 }
@@ -77,27 +82,19 @@ func (r Redis) FindByToken(token string) (*model.Session, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	timestanp, _ := strconv.ParseInt(data["expireAt"], 10, 64)
-	if timestanp == 0 {
-		return nil, nil
+	expire, err := r.db.TTL(tokenKey).Result()
+	if err != nil {
+		return nil, err
 	}
-	expireAt := time.Unix(timestanp, 0)
 
-	if expireAt.Sub(time.Now()) < 0 {
-		if err := r.DeleteByToken(token); err != nil {
-			return nil, err
-		}
-		return nil, nil
-	}
+	timestamp := time.Now().Add(expire)
 
 	s := &model.Session{
 		Token:    token,
 		UserId:   data["userid"],
 		Channel:  data["channel"],
-		ExpireAt: time.Unix(timestanp, 0),
+		ExpireAt: timestamp,
 	}
-
 	return s, nil
 }
 

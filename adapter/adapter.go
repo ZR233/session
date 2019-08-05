@@ -14,8 +14,8 @@ type DB interface {
 	CreateTokenMap(token string, channel string, expireTime time.Duration) error
 	//key为token的map 设定超时时间
 	TokenMapTokenExpireAt(token string, expireAt time.Time) error
-	//model 设置userId, userId所有token列表追加token
-	SessionUpdateUserIdAndUserTokenSetAppendToken(userId string, token string, expireAt time.Time) error
+
+	SessionUpdate(s model.Session) error
 
 	FindByToken(token string) (*model.Session, error)
 

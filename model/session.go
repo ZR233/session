@@ -12,4 +12,5 @@ type Session struct {
 	Channel    string
 	ExpireAt   time.Time
 	JsonFields interface{}
+	Update     func() error
 }

@@ -64,16 +64,11 @@ func (m Manager) CreateSession(channel string, expireTime time.Duration) (s *mod
 	if err := m.db.CreateTokenMap(s.Token, s.Channel, expireTime); err != nil {
 		return nil, err
 	}
-
-	return s, nil
-}
-func (m Manager) UpdateUserId(s *model.Session, id string, expireTime time.Duration) (*model.Session, error) {
-	s.UserId = id
-
-	expireAt := time.Now().Add(expireTime)
-	if err := m.db.SessionUpdateUserIdAndUserTokenSetAppendToken(s.UserId, s.Token, expireAt); err != nil {
-		return nil, err
+	s2 := *s
+	s.Update = func() error {
+		return m.db.SessionUpdate(s2)
 	}
+
 	return s, nil
 }
 
@@ -85,6 +80,10 @@ func (m Manager) FindByToken(token string) (s *model.Session, err error) {
 	s, err = m.db.FindByToken(token)
 	if err != nil {
 		return nil, err
+	}
+	s2 := *s
+	s.Update = func() error {
+		return m.db.SessionUpdate(s2)
 	}
 	return s, nil
 }

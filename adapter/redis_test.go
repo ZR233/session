@@ -54,30 +54,6 @@ func TestRedis_CreateTokenMap(t *testing.T) {
 	}
 }
 
-func TestRedis_SessionUpdateUserIdAndUserTokenSetAppendToken(t *testing.T) {
-	type args struct {
-		userId   string
-		token    string
-		expireAt time.Time
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{"1", args{"1", "111111", time.Now().Add(time.Second * 3)}, false},
-		{"1", args{"1", "222222", time.Now().Add(time.Second * 3)}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := newRedisForTest()
-			if err := r.SessionUpdateUserIdAndUserTokenSetAppendToken(tt.args.userId, tt.args.token, tt.args.expireAt); (err != nil) != tt.wantErr {
-				t.Errorf("Redis.SessionUpdateUserIdAndUserTokenSetAppendToken() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
 func TestRedis_FindByToken(t *testing.T) {
 
 	type args struct {
