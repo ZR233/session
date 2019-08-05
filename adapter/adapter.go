@@ -15,7 +15,7 @@ type DB interface {
 	//key为token的map 设定超时时间
 	TokenMapTokenExpireAt(token string, expireAt time.Time) error
 
-	SessionUpdate(s model.Session) error
+	SessionUpdate(*model.Session) error
 
 	FindByToken(token string) (*model.Session, error)
 

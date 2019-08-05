@@ -64,11 +64,6 @@ func (m Manager) CreateSession(channel string, expireTime time.Duration) (s *mod
 	if err := m.db.CreateTokenMap(s.Token, s.Channel, expireTime); err != nil {
 		return nil, err
 	}
-	s2 := *s
-	s.Update = func() error {
-		return m.db.SessionUpdate(s2)
-	}
-
 	return s, nil
 }
 
@@ -80,10 +75,6 @@ func (m Manager) FindByToken(token string) (s *model.Session, err error) {
 	s, err = m.db.FindByToken(token)
 	if err != nil {
 		return nil, err
-	}
-	s2 := *s
-	s.Update = func() error {
-		return m.db.SessionUpdate(s2)
 	}
 	return s, nil
 }
@@ -104,8 +95,11 @@ func (m Manager) UpdateJsonField(s *model.Session, jsonField interface{}) error 
 	if err != nil {
 		return serr.NewErr(err, serr.JsonErr)
 	}
-
 	return m.db.UpdateTokenMapSetJsonField(s.Token, string(jsonStr))
+}
+
+func (m Manager) Update(s *model.Session) error {
+	return m.db.SessionUpdate(s)
 }
 
 func (m Manager) Delete(s *model.Session) error {

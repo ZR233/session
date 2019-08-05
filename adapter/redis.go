@@ -60,7 +60,7 @@ func (r Redis) TokenMapTokenExpireAt(token string, expireAt time.Time) error {
 	return r.db.ExpireAt(tokenKey, expireAt).Err()
 }
 
-func (r Redis) SessionUpdate(s model.Session) error {
+func (r Redis) SessionUpdate(s *model.Session) error {
 	userKey := r.genUserSessionSetKey(s.UserId)
 	tokenKey := r.genSessionMapKey(s.Token)
 
