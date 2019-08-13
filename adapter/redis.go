@@ -5,7 +5,9 @@
 package adapter
 
 import (
+	"errors"
 	"github.com/ZR233/session/model"
+	"github.com/ZR233/session/serr"
 	"github.com/go-redis/redis"
 	"time"
 )
@@ -94,6 +96,10 @@ func (r Redis) FindByToken(token string) (*model.Session, error) {
 		UserId:   data["userid"],
 		Channel:  data["channel"],
 		ExpireAt: timestamp,
+	}
+
+	if s.UserId == "" {
+		return nil, serr.NewErr(errors.New("token not found"), serr.TokenNotFind)
 	}
 	return s, nil
 }
