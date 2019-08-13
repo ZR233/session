@@ -76,6 +76,7 @@ func (m Manager) FindByToken(token string) (s *model.Session, err error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return s, nil
 }
 func (m Manager) GetUserAllSessions(userId string) (sessions []*model.Session, err error) {
