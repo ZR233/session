@@ -59,7 +59,7 @@ func (r Redis) CreateTokenMap(userId string, token string, channel string, expir
 
 	//userId-tokenList  userId添加token
 	pipe.SAdd(userKey, key)
-	setTTL, _ := pipe.TTL(userKey).Result()
+	setTTL, _ := r.db.TTL(userKey).Result()
 	if setTTL < expireAt.Sub(time.Now()) {
 		pipe.ExpireAt(userKey, expireAt)
 	}
