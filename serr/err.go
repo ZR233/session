@@ -4,18 +4,8 @@
 */
 package serr
 
-const (
-	_ = iota
-	TokenNotFind
-	RedisErr
-	JsonErr
+import "errors"
+
+var (
+	TokenNotFound = errors.New("token not found")
 )
-
-type Error struct {
-	error
-	Code int
-}
-
-func NewErr(err error, code int) error {
-	return Error{err, code}
-}

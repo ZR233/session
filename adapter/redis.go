@@ -5,7 +5,7 @@
 package adapter
 
 import (
-	"errors"
+	"encoding/json"
 	"github.com/ZR233/session/model"
 	"github.com/ZR233/session/serr"
 	"github.com/go-redis/redis"
@@ -44,14 +44,22 @@ func (r Redis) genUserSessionSetKey(userId string) string {
 	return key
 }
 
-func (r Redis) CreateTokenMap(token string, channel string, expireTime time.Duration) error {
+func (r Redis) CreateTokenMap(userId string, token string, channel string, expireAt time.Time) error {
 	key := r.genSessionMapKey(token)
+	userKey := r.genUserSessionSetKey(userId)
+
 	values := make(map[string]interface{})
+	values["userid"] = userId
 	values["channel"] = channel
-	expireAt := time.Now().Add(expireTime)
+
 	pipe := r.db.TxPipeline()
+	//创建HashSet token-values
 	pipe.HMSet(key, values)
 	pipe.ExpireAt(key, expireAt)
+
+	//userId-tokenList  userId添加token
+	pipe.SAdd(userKey, key)
+
 	_, err := pipe.Exec()
 
 	return err
@@ -63,18 +71,23 @@ func (r Redis) TokenMapTokenExpireAt(token string, expireAt time.Time) error {
 }
 
 func (r Redis) SessionUpdate(s *model.Session) error {
-	userKey := r.genUserSessionSetKey(s.UserId)
+
 	tokenKey := r.genSessionMapKey(s.Token)
 
 	values := make(map[string]interface{})
 	values["userid"] = s.UserId
+	values["channel"] = s.Channel
+	jsonStr, err := json.Marshal(s.JsonFields)
+	if err != nil {
+		return err
+	}
 
 	pipe := r.db.TxPipeline()
 	pipe.HMSet(tokenKey, values)
-	pipe.SAdd(userKey, tokenKey)
 	pipe.ExpireAt(tokenKey, s.ExpireAt)
-	pipe.ExpireAt(userKey, s.ExpireAt)
-	_, err := pipe.Exec()
+	pipe.HSet(tokenKey, "jsonField", jsonStr)
+
+	_, err = pipe.Exec()
 	return err
 }
 
@@ -84,6 +97,10 @@ func (r Redis) FindByToken(token string) (*model.Session, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(data) == 0 {
+		return nil, serr.TokenNotFound
+	}
+
 	expire, err := r.db.TTL(tokenKey).Result()
 	if err != nil {
 		return nil, err
@@ -98,30 +115,34 @@ func (r Redis) FindByToken(token string) (*model.Session, error) {
 		ExpireAt: timestamp,
 	}
 
-	if s.UserId == "" {
-		return nil, serr.NewErr(errors.New("token not found"), serr.TokenNotFind)
-	}
 	return s, nil
 }
 
-func (r Redis) UpdateTokenMapSetJsonField(token string, jsonField string) error {
-	tokenKey := r.genSessionMapKey(token)
-	return r.db.HSet(tokenKey, "jsonField", jsonField).Err()
-}
-
-func (r Redis) FindTokenByUserId(id string) ([]string, error) {
+func (r Redis) FindAllSessionsByUserId(id string) (sessions []*model.Session, err error) {
 	userKey := r.genUserSessionSetKey(id)
+
 	data, err := r.db.SMembers(userKey).Result()
 	if err != nil {
 		return nil, err
 	}
-	var tokens []string
+	var tokensNotExist []string
 	for _, v := range data {
 		v = r.decodeSessionMapKey(v)
-		tokens = append(tokens, v)
+		var s *model.Session
+		s, err = r.FindByToken(v)
+		if err != nil {
+			if err == serr.TokenNotFound {
+				tokensNotExist = append(tokensNotExist, v)
+				err = nil
+				continue
+			} else {
+				return
+			}
+		}
+		sessions = append(sessions, s)
 	}
-
-	return data, nil
+	r.db.SRem(userKey, tokensNotExist)
+	return
 }
 
 func (r Redis) DeleteByToken(token string) error {
@@ -135,7 +156,6 @@ func (r Redis) DeleteByToken(token string) error {
 			return nil
 		}
 	}
-
 	return r.db.Del(tokenKey).Err()
 }
 

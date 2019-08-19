@@ -6,11 +6,10 @@ package adapter
 
 import (
 	"github.com/ZR233/session/model"
+	"github.com/go-redis/redis"
 	"reflect"
 	"testing"
 	"time"
-
-	"github.com/go-redis/redis"
 )
 
 func getTestRedisClient() *redis.Client {
@@ -24,9 +23,10 @@ func getTestRedisClient() *redis.Client {
 func TestRedis_CreateTokenMap(t *testing.T) {
 
 	type args struct {
-		token      string
-		channel    string
-		expireTime time.Duration
+		userid   string
+		token    string
+		channel  string
+		expireAt time.Time
 	}
 	tests := []struct {
 		name    string
@@ -34,13 +34,15 @@ func TestRedis_CreateTokenMap(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"1", newRedisForTest(), args{"111111", "test", time.Second * 10}, false},
-		{"1", newRedisForTest(), args{"222222", "test", time.Second * 20}, false},
+		{"1", newRedisForTest(), args{"1", "111111", "test",
+			time.Now().Add(time.Second * 10)}, false},
+		{"1", newRedisForTest(), args{"1", "222222", "test",
+			time.Now().Add(time.Second * 20)}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := tt.fields
-			if err := r.CreateTokenMap(tt.args.token, tt.args.channel, tt.args.expireTime); (err != nil) != tt.wantErr {
+			if err := r.CreateTokenMap(tt.args.userid, tt.args.token, tt.args.channel, tt.args.expireAt); (err != nil) != tt.wantErr {
 				t.Errorf("Redis.CreateTokenMap() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			data, err := tt.fields.db.HMGet(tt.fields.genSessionMapKey(tt.args.token), "channel", "expireAt").Result()
@@ -56,6 +58,11 @@ func TestRedis_CreateTokenMap(t *testing.T) {
 
 func TestRedis_FindByToken(t *testing.T) {
 
+	r := newRedisForTest()
+	at := time.Now().Add(time.Second * 5)
+_:
+	r.CreateTokenMap("99", "1234", "test", at)
+
 	type args struct {
 		token string
 	}
@@ -65,24 +72,44 @@ func TestRedis_FindByToken(t *testing.T) {
 		want    *model.Session
 		wantErr bool
 	}{
-		{"", args{"222222"}, &model.Session{}, false},
+		{"未找到token", args{"222222"}, nil, true},
+		{"找到", args{"1234"}, &model.Session{
+			Token:      "1234",
+			UserId:     "99",
+			Channel:    "test",
+			ExpireAt:   at,
+			JsonFields: nil,
+		}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := newRedisForTest()
+
 			got, err := r.FindByToken(tt.args.token)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Redis.FindByToken() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Redis.FindByToken() = %v, want %v", got, tt.want)
+			if got != nil {
+				if got.Token != tt.want.Token ||
+					got.UserId != tt.want.UserId ||
+					got.Channel != tt.want.Channel ||
+					got.JsonFields != tt.want.JsonFields {
+					t.Errorf("Redis.FindByToken() = %v, want %v", got, tt.want)
+				}
 			}
 		})
 	}
 }
 
-func TestRedis_FindTokenByUserId(t *testing.T) {
+func TestRedis_FindAllSessionsByUserId(t *testing.T) {
+
+	r := newRedisForTest()
+	at1 := time.Now().Add(time.Second * 2)
+	at2 := time.Now().Add(time.Millisecond * 2)
+_:
+	r.CreateTokenMap("98", "1aaaaa", "test", at1)
+_:
+	r.CreateTokenMap("98", "2bbbbb", "test", at2)
 
 	type args struct {
 		id string
@@ -93,18 +120,26 @@ func TestRedis_FindTokenByUserId(t *testing.T) {
 		want    []string
 		wantErr bool
 	}{
-		{"user 1", args{"1"}, []string{"123456"}, false},
+		{"1超时1正常", args{"98"}, []string{"1aaaaa"}, false},
 	}
+
+	time.Sleep(time.Millisecond * 50)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := newRedisForTest()
-			got, err := r.FindTokenByUserId(tt.args.id)
+			got, err := r.FindAllSessionsByUserId(tt.args.id)
+			var got2 []string
+
+			for _, g := range got {
+				got2 = append(got2, g.Token)
+			}
+
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Redis.FindTokenByUserId() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Redis.FindAllSessionsByUserId() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Redis.FindTokenByUserId() = %v, want %v", got, tt.want)
+			if !reflect.DeepEqual(got2, tt.want) {
+				t.Errorf("Redis.FindAllSessionsByUserId() = %v, want %v", got, tt.want)
 			}
 		})
 	}
