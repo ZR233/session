@@ -56,6 +56,7 @@ func (m Manager) genToken() string {
 
 func (m Manager) CreateSession(userId string, channel string, expireAt time.Time) (s *model.Session, err error) {
 	s = &model.Session{
+		UserId:  userId,
 		Token:   m.genToken(),
 		Channel: channel,
 	}
