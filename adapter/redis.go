@@ -59,7 +59,7 @@ func (r Redis) CreateTokenMap(userId string, token string, channel string, expir
 
 	//userId-tokenList  userId添加token
 	pipe.SAdd(userKey, key)
-	setTTL, _ := r.db.TTL(userKey).Result()
+	setTTL, _ := pipe.TTL(userKey).Result()
 	if setTTL < expireAt.Sub(time.Now()) {
 		pipe.ExpireAt(userKey, expireAt)
 	}
@@ -77,7 +77,7 @@ func (r Redis) TokenMapTokenExpireAt(token string, expireAt time.Time) error {
 func (r Redis) SessionUpdate(s *model.Session) error {
 
 	tokenKey := r.genSessionMapKey(s.Token)
-
+	userKey := r.genUserSessionSetKey(s.UserId)
 	values := make(map[string]interface{})
 	values["userid"] = s.UserId
 	values["channel"] = s.Channel
@@ -91,6 +91,10 @@ func (r Redis) SessionUpdate(s *model.Session) error {
 	pipe.ExpireAt(tokenKey, s.ExpireAt)
 	pipe.HSet(tokenKey, "jsonField", jsonStr)
 
+	setTTL, _ := pipe.TTL(userKey).Result()
+	if setTTL < s.ExpireAt.Sub(time.Now()) {
+		pipe.ExpireAt(userKey, s.ExpireAt)
+	}
 	_, err = pipe.Exec()
 	return err
 }
