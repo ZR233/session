@@ -22,7 +22,7 @@ expireAt := time.Now().Add(time.Hour*24*5)
 //新建session
 sess, err := sessionManager.CreateSession(userId, src, expireAt)
 if err != nil {
-    pamic(err)
+    panic(err)
 }
 
 //查找session
@@ -31,7 +31,7 @@ if err != nil{
     if err == serr.TokenNotFound {
         println(err)
     }else{
-        pamic(err)
+        panic(err)
     }
 }
 ```
