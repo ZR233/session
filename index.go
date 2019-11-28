@@ -42,7 +42,7 @@ func NewManager(db adapter.DB) *Manager {
 	return m
 }
 
-func NewRedisAdapter(client *redis.Client, prefix string) adapter.Redis {
+func NewRedisAdapter(client redis.UniversalClient, prefix string) adapter.Redis {
 	return adapter.NewRedis(client, prefix)
 }
 

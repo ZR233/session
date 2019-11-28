@@ -17,7 +17,7 @@ const (
 )
 
 type Redis struct {
-	db     *redis.Client
+	db     redis.UniversalClient
 	prefix string
 }
 
@@ -181,7 +181,7 @@ func newRedisForTest() Redis {
 	return a
 }
 
-func NewRedis(client *redis.Client, prefix string) Redis {
+func NewRedis(client redis.UniversalClient, prefix string) Redis {
 	a := Redis{
 		client,
 		prefix,
