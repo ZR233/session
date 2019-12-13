@@ -25,7 +25,7 @@ func (r *Redis) genSessionMapKey(token string) string {
 	if r.prefix == "" {
 		r.prefix = DefaultPrefix
 	}
-	key := r.prefix + "_token_" + token
+	key := r.prefix + ":token:" + token
 	return key
 }
 func (r *Redis) decodeSessionMapKey(key string) string {
@@ -40,7 +40,7 @@ func (r Redis) genUserSessionSetKey(userId string) string {
 	if r.prefix == "" {
 		r.prefix = DefaultPrefix
 	}
-	key := r.prefix + "_user_" + userId
+	key := r.prefix + ":user:" + userId
 	return key
 }
 
