@@ -9,11 +9,12 @@ import (
 	"github.com/ZR233/session/model"
 	"github.com/ZR233/session/serr"
 	"github.com/go-redis/redis"
+	"strings"
 	"time"
 )
 
 const (
-	DefaultPrefix = "model"
+	sessionPrefix = "session"
 )
 
 type Redis struct {
@@ -22,24 +23,20 @@ type Redis struct {
 }
 
 func (r *Redis) genSessionMapKey(token string) string {
-	if r.prefix == "" {
-		r.prefix = DefaultPrefix
-	}
-	key := r.prefix + ":token:" + token
+	key := strings.Join([]string{
+		r.prefix,
+		"token",
+		token,
+	}, ":")
+
 	return key
 }
 func (r *Redis) decodeSessionMapKey(key string) string {
-	if r.prefix == "" {
-		r.prefix = DefaultPrefix
-	}
 	key = key[len(r.prefix)+7:]
 	return key
 }
 
 func (r Redis) genUserSessionSetKey(userId string) string {
-	if r.prefix == "" {
-		r.prefix = DefaultPrefix
-	}
 	key := r.prefix + ":user:" + userId
 	return key
 }
@@ -184,7 +181,7 @@ func newRedisForTest() Redis {
 func NewRedis(client redis.UniversalClient, prefix string) Redis {
 	a := Redis{
 		client,
-		prefix,
+		prefix + ":" + sessionPrefix,
 	}
 	return a
 }
