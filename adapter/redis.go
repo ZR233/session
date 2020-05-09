@@ -170,7 +170,7 @@ func newRedisForTest() Redis {
 		Password: "asdf*123", // no password set
 		DB:       0,          // use default DB
 	})
-
+	// a
 	a := Redis{
 		client,
 		"test_session",
