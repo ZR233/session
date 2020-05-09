@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"github.com/ZR233/session/model"
 	"github.com/ZR233/session/serr"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v7"
 	"strings"
 	"time"
 )
@@ -178,7 +178,9 @@ func newRedisForTest() Redis {
 	return a
 }
 
-func NewRedis(client redis.UniversalClient, prefix string) Redis {
+func NewRedis(options *redis.UniversalOptions, prefix string) Redis {
+	client := redis.NewUniversalClient(options)
+
 	a := Redis{
 		client,
 		prefix + ":" + sessionPrefix,
