@@ -10,7 +10,7 @@ import (
 	"github.com/ZR233/session/adapter"
 	"github.com/ZR233/session/model"
 	"github.com/ZR233/session/serr"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v7"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -42,8 +42,8 @@ func NewManager(db adapter.DB) *Manager {
 	return m
 }
 
-func NewRedisAdapter(client redis.UniversalClient, prefix string) adapter.Redis {
-	return adapter.NewRedis(client, prefix)
+func NewRedisAdapter(options *redis.UniversalOptions, prefix string) adapter.Redis {
+	return adapter.NewRedis(options, prefix)
 }
 
 func (m Manager) genToken() string {
